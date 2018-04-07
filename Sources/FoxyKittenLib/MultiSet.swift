@@ -8,9 +8,14 @@ struct MultiSet<T: Hashable>: Sequence {
   /// Represents the number of elements in the container.
   var count = 0
 
-  /// Constructs a multiset from an array.
+  /// Constructs a multiset from an comma separated list.
   init(arrayLiteral: T...) {
-    for e in arrayLiteral {
+    self.init(arrayLiteral)
+  }
+
+  /// Constructs a multiset from an array.
+  init(_ arr: [T]) {
+    for e in arr {
       elementsCount[e] = (elementsCount[e] ?? 0) + 1
       count += 1
     }
