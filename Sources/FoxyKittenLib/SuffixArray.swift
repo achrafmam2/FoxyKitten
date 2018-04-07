@@ -1,8 +1,8 @@
 import Foundation
 
-struct SuffixArray {
+struct SuffixArray<T: Comparable> {
   /// Input string.
-  let str: [CChar]
+  let arr: [T]
 
   /// Suffix array of `str`.
   /// The final order is in `suffixArray[m]`.
@@ -16,25 +16,41 @@ struct SuffixArray {
 
   /// Create the suffix array of `s`.
   /// - parameter s: Input string.
-  init(_ s: String) {
-    str = [CChar](s.utf8CString)
-    n = str.count - 1
-    m = Int(ceil(log2(Double(n))) + 1e-11)
-    suffixArray = SuffixArray.build(from: str)
+  init(_ s: [T]) {
+    arr = s
+    n = arr.count
+    m = Int(ceil(log2(Double(n))))
+    suffixArray = SuffixArray.build(from: arr)
   }
 
   /// Build suffix array.
   /// - parameter str: Input string.
   /// - returns: suffix array.
-  private static func build(from str: [CChar]) -> [[Int]] {
-    let n = str.count - 1
-    let m = Int(ceil(log2(Double(n))) + 1e-11)
+  private static func build<T: Comparable>(from arr: [T]) -> [[Int]] {
+    let n = arr.count
+    let m = Int(ceil(log2(Double(n))))
 
     var ranks = [(Int, Int, Int)](repeating: (0, 0, 0), count: n)
     var sa = [[Int]](repeating: [Int](repeating: 0, count: n), count: m + 1)
 
+    let sorted = arr.sorted()
+
     for i in 0..<n {
-      sa[0][i] = Int(str[i])
+      var lo = 0, hi = n, idx = -1
+      while lo <= hi {
+        let mid = (lo + hi) / 2
+        if sorted[mid] == arr[i] {
+          idx = mid
+          hi = mid - 1
+        } else if arr[i] < sorted[mid] {
+          hi = mid - 1
+        } else {
+          lo = mid + 1
+        }
+      }
+      assert(idx >= 0)
+
+      sa[0][i] = idx
     }
 
     for j in 1...m {
@@ -62,7 +78,12 @@ struct SuffixArray {
 }
 
 extension SuffixArray {
+  /// Returns longest common prefix for two suffixes.
+  /// - parameters:
+  ///   - a : Index of the first suffix.
+  ///   - b : Index of the second suffix.
   func lcp(_ a: Int, _ b: Int) -> Int {
+    // TODO: throw in case `a` or `b` are out of range.
     var size = 0, x = a, y = b
     for j in (0..<m).reversed() {
       if suffixArray[j][x] == suffixArray[j][y] {
@@ -75,5 +96,14 @@ extension SuffixArray {
       }
     }
     return size
+  }
+}
+
+extension SuffixArray where T == Character {
+  /// Build suffix array from a string.
+  /// - parameter str: A String.
+  init(_ str: String) {
+    let arr = str.map {$0}
+    self.init(arr)
   }
 }
