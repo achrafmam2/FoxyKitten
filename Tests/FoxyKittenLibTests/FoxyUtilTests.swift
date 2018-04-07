@@ -24,4 +24,19 @@ class FoxyUtilTests: XCTestCase {
       XCTFail("\(error)")
     }
   }
+
+  func testBuildAssignementMatrix() {
+    do {
+      let p = try FoxyClang(path: "input_tests/assignment/prog-0.c")
+      let q = try FoxyClang(path: "input_tests/assignment/prog-1.c")
+      let options = FoxyOptions(windownSize: 4, followDependencies: true)
+
+      XCTAssertEqual(
+        [[4, 4, 1], [4, 6, 1], [1, 1, 1]],
+        buildAssignementMatrix(p, q, using: options))
+
+    } catch {
+      XCTFail("\(error)")
+    }
+  }
 }
