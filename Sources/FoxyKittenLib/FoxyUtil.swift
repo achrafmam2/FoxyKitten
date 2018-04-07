@@ -29,6 +29,22 @@ func extractNgram(from p: FoxyClang, using options: FoxyOptions) -> [Int] {
   }
 }
 
+/// Computes the average of:
+///   - jaccard coefficient:   (|A| ∩ |B|) / (|A| ∪ |B|)
+///   - inclusion coefficient: (|A| ∩ |B|) / MIN(|A|, |B|)
+///   - coverage coefficient:  (|A| ∩ |B|) / MAX(|A|, |B|)
+/// - parameters:
+///   - a: Multiset.
+///   - b: Multiset.
+func foxyCoefficient<T>(_ a: MultiSet<T>, _ b: MultiSet<T>) -> Double {
+  let intersection = Double(a.intersection(b).count)
+  let union = Double(a.union(b).count)
+  let largest = Double(max(a.count, b.count))
+  let smallest = Double(min(a.count, b.count))
+
+  return intersection * ((1.0 / union) + (1.0 / largest) + (1.0 / smallest)) / 3.0
+}
+
 /// Computes Similarity between two projects.
 /// - parameters:
 ///   - p: A FoxyClang project.
@@ -43,10 +59,5 @@ func computeSimilarity(
   let featureSet1 = MultiSet(extractNgram(from: p, using: options))
   let featureSet2 = MultiSet(extractNgram(from: q, using: options))
 
-  let intersection = Double(featureSet1.intersection(featureSet2).count)
-  let union = Double(featureSet1.union(featureSet2).count)
-  let largest = Double(max(featureSet1.count, featureSet2.count))
-  let smallest = Double(min(featureSet1.count, featureSet2.count))
-
-  return intersection * ((1.0 / union) + (1.0 / largest) + (1.0 / smallest)) / 3.0
+  return foxyCoefficient(featureSet1, featureSet2)
 }
