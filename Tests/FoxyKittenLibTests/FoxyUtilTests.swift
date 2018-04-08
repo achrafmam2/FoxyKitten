@@ -42,8 +42,8 @@ class FoxyUtilTests: XCTestCase {
 
   func testBlame() {
     do {
-      let p = try FoxyClang(path: "/tmp/prog-2.c")
-      let q = try FoxyClang(path: "/tmp/prog-3.c")
+      let p = try FoxyClang(path: "input_tests/similarity/prog-2.c")
+      let q = try FoxyClang(path: "input_tests/similarity/prog-3.c")
 
       XCTAssertEqual(6, blame(p, q, treshold: 17).count)
     } catch {
