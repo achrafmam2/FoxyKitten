@@ -21,19 +21,19 @@ struct FoxyClang {
   private let usrToFunctionDefinition: [String: Cursor]
 
   /// Represents the count of functions in the project.
-  var functionCount: Int {
+  var count: Int {
     return self.usrToFunctionDefinition.count
   }
 
   /// Represents the function usrs in the project.
-  var functionUsrs: [String] {
+  var usrs: [String] {
     return self.usrToFunctionDefinition.map{$0.key}.sorted()
   }
 
   /// Gets function definition for given USR.
   /// - parameter usr: USR of the function.
   /// - note: The usrs can be fetched using `functionUsrs`.
-  func functionDefinition(withUsr usr: String) -> Cursor? {
+  func definitionCursor(withUsr usr: String) -> Cursor? {
     return self.usrToFunctionDefinition[usr]
   }
 

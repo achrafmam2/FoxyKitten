@@ -7,7 +7,7 @@ class FoxyClangTests: XCTestCase {
     do {
       let foxy = try FoxyClang(path: "input_tests/foxy-init.c")
       XCTAssertEqual(
-        foxy.functionUsrs.map{foxy.functionDefinition(withUsr: $0)!.description}.sorted(),
+        foxy.usrs.map{foxy.definitionCursor(withUsr: $0)!.description}.sorted(),
         ["LCS", "main", "max"])
     } catch {
       XCTFail("\(error)")
@@ -18,7 +18,7 @@ class FoxyClangTests: XCTestCase {
     do {
       let foxy = try FoxyClang(path: "input_tests/foxy-init-mult")
       XCTAssertEqual(
-        foxy.functionUsrs.map{foxy.functionDefinition(withUsr: $0)!.description}.sorted(),
+        foxy.usrs.map{foxy.definitionCursor(withUsr: $0)!.description}.sorted(),
         ["LCS", "main", "max"])
     } catch {
       XCTFail("\(error)")
