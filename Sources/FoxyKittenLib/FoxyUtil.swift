@@ -4,11 +4,11 @@ import Matching
 import Foundation
 import cclang
 
-struct FoxyOptions {
+public struct FoxyOptions {
   let windownSize: Int
   let followDependencies: Bool
 
-  static var `default`: FoxyOptions {
+  public static var `default`: FoxyOptions {
     return FoxyOptions(windownSize: 4, followDependencies: false)
   }
 }
@@ -18,7 +18,7 @@ struct FoxyOptions {
 ///   - usr: A valid USR in `p`.
 ///   - p: A FoxyClang project.
 ///   - options: Options used to customize extraction
-func extractNgrams(
+public func extractNgrams(
   from usr: String,
   in p: FoxyClang,
   using options: FoxyOptions) -> [Int] {
@@ -39,7 +39,7 @@ func extractNgrams(
 ///   - p: A FoxyClang project.
 ///   - options: Options used to customize extraction.
 /// - returns: an array of ngram hashes.
-func extractNgrams(from p: FoxyClang, using options: FoxyOptions) -> [Int] {
+public func extractNgrams(from p: FoxyClang, using options: FoxyOptions) -> [Int] {
   // For each function get its features.
   return p.usrs.flatMap { usr -> [Int] in
     return extractNgrams(from: usr, in: p, using: options)
@@ -53,7 +53,7 @@ func extractNgrams(from p: FoxyClang, using options: FoxyOptions) -> [Int] {
 /// - parameters:
 ///   - a: Multiset.
 ///   - b: Multiset.
-func foxyCoefficient<T>(_ a: MultiSet<T>, _ b: MultiSet<T>) -> Double {
+public func foxyCoefficient<T>(_ a: MultiSet<T>, _ b: MultiSet<T>) -> Double {
   let intersection = Double(a.intersection(b).count)
   let union = Double(a.union(b).count)
   let largest = Double(max(a.count, b.count))
@@ -68,7 +68,7 @@ func foxyCoefficient<T>(_ a: MultiSet<T>, _ b: MultiSet<T>) -> Double {
 ///   - q: A FoxyClang project.
 ///   - q: Options used to make computation customizeable.
 /// - returns:  A value between 0 and 1.0.
-func computeSimilarity(
+public func computeSimilarity(
   _ p: FoxyClang,
   _ q: FoxyClang,
   using options: FoxyOptions = .default) -> Double {
@@ -88,7 +88,7 @@ func computeSimilarity(
 ///   - options: Options used for custom ngram extraction.
 /// - note: rows represent the functions from the first project, while the
 ///     colums represent the function from the second.
-func buildAssignementMatrix(
+public func buildAssignementMatrix(
   _ first: FoxyClang,
   _ second: FoxyClang,
   using options: FoxyOptions) -> [[Int]] {
@@ -115,7 +115,7 @@ func buildAssignementMatrix(
   return costs
 }
 
-struct Similarity {
+public struct Similarity {
   /// Represents where similarity occurs.
   let firstLocation: SourceRange
 
@@ -163,7 +163,7 @@ private func removeIntersecting(
 
 /// Remove Noisy ranges.
 /// It removes all ranges that overlap.
-func removeNoise(
+private func removeNoise(
   from tupRanges: [(CountableRange<Int>, CountableRange<Int>)]) -> [(CountableRange<Int>, CountableRange<Int>)] {
 
   var tups = tupRanges.sorted { $0.0 < $1.0 }
@@ -217,7 +217,7 @@ private func setupForBlaming(_ proj: FoxyClang) -> ([Cursor], [String]) {
 ///   - first: A FoxyClang project.
 ///   - second: A FoxyClang project.
 /// - returns: An array of similarities.
-func blame(
+public func blame(
   _ first: FoxyClang,
   _ second: FoxyClang,
   treshold: Int) -> [Similarity] {
