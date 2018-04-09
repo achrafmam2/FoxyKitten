@@ -1,24 +1,32 @@
 import Clang
 import Foundation
 import cclang
+import ccmark
 
 public enum ClangProjectError: Error {
   case pathError
   case empty
 }
 
-public struct FoxyClang {
+public class FoxyClang {
   /// Index that contains all translation units of the project.
   private let index = Index()
 
   /// Project path.
-  private let path: String
+  public let path: String
 
   /// Translation Units of the project.
   private let units: [TranslationUnit]
 
   /// Mapping between Usrs and function Definitions.
   private let usrToFunctionDefinition: [String: Cursor]
+
+  public var name: String? {
+    if let last = path.split(separator: "/").last {
+      return String(last)
+    }
+    return nil
+  }
 
   /// Represents the count of functions in the project.
   public var count: Int {
@@ -181,5 +189,20 @@ public struct FoxyClang {
     }
 
     return muttableUsrToDefinition
+  }
+}
+
+extension FoxyClang {
+  public var markdown: String {
+    var out = ""
+    for unit in units {
+      let content = try! String(contentsOfFile: unit.spelling)
+      
+      out += "#### \(unit.spelling)\n\n"
+      out += "```\n" + content + "```\n"
+      out += "---\n"
+    }
+
+    return out
   }
 }

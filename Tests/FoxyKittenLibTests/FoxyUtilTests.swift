@@ -40,12 +40,13 @@ class FoxyUtilTests: XCTestCase {
     }
   }
 
-  func testBlame() {
+  func testFoxySherlock() {
     do {
       let p = try FoxyClang(path: "input_tests/similarity/prog-2.c")
       let q = try FoxyClang(path: "input_tests/similarity/prog-3.c")
 
-      XCTAssertEqual(6, blame(p, q, treshold: 17).count)
+      let proofs = runSherlockFoxy(p, q, treshold: 17)
+      XCTAssertEqual(6, proofs.count)
     } catch {
       XCTFail("\(error)")
     }
