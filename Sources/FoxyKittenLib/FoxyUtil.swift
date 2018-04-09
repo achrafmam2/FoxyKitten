@@ -116,24 +116,6 @@ public func buildAssignementMatrix(
   return costs
 }
 
-/// Represents a part of an a evidence.
-public struct EvidenceChunk {
-  /// Represents location evidence.
-  public let location: SourceRange
-}
-
-/// Represents a plagiarism evidence.
-/// The two evidence chunks both constitute an evidence.
-/// When juxtaposing the left hand side with the right hand side
-/// the plagiarism should become obvious.
-public struct Evidence {
-  /// Represents an evidence part in the left hand side project.
-  public let lhs: EvidenceChunk
-
-  /// Represents an evidence part in the right hand side project.
-  public let rhs: EvidenceChunk
-}
-
 /// Remove Intersecting ranges.
 /// In case two ranges intersect keep the largest one.
 /// - parameter ranges: A range.
@@ -457,8 +439,8 @@ extension SourceRange: Comparable {
 
 /// Unzip an `Array` of key/value tuples.
 ///
-/// - Parameter array: `Array` of key/value tuples.
-/// - Returns: A tuple with two arrays, an `Array` of keys and an `Array` of values.
+/// - parameter array: `Array` of key/value tuples.
+/// - returns: A tuple with two arrays, an `Array` of keys and an `Array` of values.
 func unzip<K, V>(_ array: [(key: K, value: V)]) -> ([K], [V]) {
   var keys = [K]()
   var values = [V]()
@@ -472,4 +454,19 @@ func unzip<K, V>(_ array: [(key: K, value: V)]) -> ([K], [V]) {
   }
 
   return (keys, values)
+}
+
+/// Create a markdown string for an array of files.
+/// - parameter files: An array of files (usually part of a project,
+///     or an evidence folder).
+func makeMarkdownFrom(_ files: [File]) -> String {
+  var markdown = ""
+  files.forEach { file in
+    let content = try! String(contentsOfFile: file.name)
+
+    markdown += "#### \(file.name)\n\n"
+    markdown += "```\n" + content + "```\n"
+    markdown += "---\n"
+  }
+  return markdown
 }

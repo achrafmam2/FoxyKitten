@@ -1,4 +1,5 @@
 import Foundation
+import Clang
 import XCTest
 @testable import FoxyKittenLib
 
@@ -47,6 +48,22 @@ class FoxyUtilTests: XCTestCase {
 
       let proofs = runSherlockFoxy(p, q, treshold: 17)
       XCTAssertEqual(6, proofs.count)
+    } catch {
+      XCTFail("\(error)")
+    }
+  }
+
+  func testMakeMarkdownFrom() {
+    do {
+      let unit0 = try TranslationUnit(filename: "input_tests/to_markdown/main.c")
+      let unit1 = try TranslationUnit(filename: "input_tests/to_markdown/roll.c")
+
+      let file0 = unit0.getFile(for: unit0.spelling)!
+      let file1 = unit1.getFile(for: unit1.spelling)!
+
+      XCTAssertEqual(
+        try! String(contentsOfFile: "input_tests/to_markdown/golden.in"),
+        makeMarkdownFrom([file0, file1]))
     } catch {
       XCTFail("\(error)")
     }
