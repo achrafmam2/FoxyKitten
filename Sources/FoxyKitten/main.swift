@@ -48,6 +48,7 @@ let resultsFolder = "/tmp/" + resultUUID.uuidString
 try! filemanager.createDirectory(atPath: resultsFolder, withIntermediateDirectories: true)
 
 // Process projects.
+var folders = [EvidenceFolder]()
 for id in (0..<projects.count) {
   let orig_proj = projects[id]
 
@@ -62,21 +63,56 @@ for id in (0..<projects.count) {
 
   print("\(orig_proj.path) \(closest_project.path) \(value)")
 
-  let chunks = runSherlockFoxy(orig_proj,
+  let evidences = runSherlockFoxy(orig_proj,
                                closest_project,
-                               treshold: treshold).map { $0.lhs }
+                               treshold: treshold)
 
-  let filename = resultsFolder + "/" + orig_proj.name! + ".html"
-//  print(filename)
 
-  var blamed = blame(orig_proj.markdown, on: chunks)
-  let root = cmark_parse_document(blamed, blamed.utf16.count, CMARK_OPT_DEFAULT)
-  blamed = String(cString: cmark_render_html(root, CMARK_OPT_DEFAULT))
-  blamed = highlight(blamed)
+  let folder = EvidenceFolder(culprit: orig_proj, evidences: evidences)
+  folders.append(folder)
 
+
+//  let filename = resultsFolder + "/" + orig_proj.name! + ".html"
+////  print(filename)
+//
+//  var blamed = blame(makeMarkdownFrom(orig_proj.files), on: chunks)
+//  let root = cmark_parse_document(blamed, blamed.utf16.count, CMARK_OPT_DEFAULT)
+//  blamed = String(cString: cmark_render_html(root, CMARK_OPT_DEFAULT))
+//  blamed = highlight(blamed)
+//
+//  assert(filemanager.createFile(
+//    atPath: filename,
+//    contents: blamed.data(using: .utf16)))
+}
+
+for folder in folders {
+  let culpritFiles = folder.culprit.files
+  let evidenceFiles = folder.evidenceFiles
+  let name = folder.culprit.name!
+
+  let origMarked = mark(
+    makeMarkdownFrom(culpritFiles),
+    on: folder.evidences.map {$0.lhs},
+    uiids: folder.evidences.map({$0.uuid}),
+    withTemplateFormat: "<a href=\"\(name)-rhs#%@\" id=\"%@\">$1</a>")
+
+
+  let evidenceMarked = mark(
+    makeMarkdownFrom(evidenceFiles),
+    on: folder.evidences.map {$0.rhs},
+    uiids: folder.evidences.map({$0.uuid}),
+    withTemplateFormat: "<a href=\"\(name)-rhs#%@\" id=\"%@\">$1</a>")
+
+// DEBUG SESSION
+  var filename = "\(resultsFolder)/\(name)-lhs.html"
   assert(filemanager.createFile(
     atPath: filename,
-    contents: blamed.data(using: .utf16)))
+    contents: origMarked.data(using: .utf16)))
+
+  filename = "\(resultsFolder)/\(name)-rhs.html"
+  assert(filemanager.createFile(
+    atPath: filename,
+    contents: evidenceMarked.data(using: .utf16)))
 }
 
 // The contents of main are wrapped in a do/catch block because any errors that get raised to the top level will crash Xcode

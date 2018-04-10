@@ -315,6 +315,7 @@ public func blame(_ str: String, on chunks: [EvidenceChunk]) -> String {
     let file = chunk.location.start.file
     let start = chunk.location.start.offset
     let end = chunk.location.end.offset
+    let uuid = chunk.uuid!
 
     let cStr =
       try! [CChar](String(contentsOfFile: file.name).utf8CString[start ... end]) + [0]
@@ -340,11 +341,12 @@ public func blame(_ str: String, on chunks: [EvidenceChunk]) -> String {
       in: tagged,
       options: [],
       range: NSRange(location: 0, length: tagged.utf16.count),
-      withTemplate: "{{$}}$1{{$}}")
+      withTemplate: "{{\(uuid)}}$1{{\(uuid)}}")
 
-    let filemanager = FileManager.default
-    filemanager.createFile(
-      atPath: "/tmp/result.html", contents: tagged.data(using: .utf16))
+//     DEBUG SECTION
+//    let filemanager = FileManager.default
+//    filemanager.createFile(
+//      atPath: "/tmp/result.html", contents: tagged.data(using: .utf16))
 
   }
 
@@ -362,8 +364,12 @@ public func blame(_ str: String, on chunks: [EvidenceChunk]) -> String {
 
 /// Highlight a blamed string.
 /// - parameter str: A blamed string.
-public func highlight(_ str: String) -> String {
-  let delim = NSRegularExpression.escapedPattern(for: "{{$}}")
+public func highlight(
+  _ str: String,
+  forUUID uuid: UUID,
+  withTemplate template: String) -> String {
+
+  let delim = NSRegularExpression.escapedPattern(for: "{{\(uuid)}}")
   let pattern = delim  + "(.*?)" + delim
   let regex = try! NSRegularExpression(
     pattern: pattern,
@@ -374,13 +380,15 @@ public func highlight(_ str: String) -> String {
     options: [],
     range: NSRange(location: 0, length: str.utf16.count))
 
+  assert(matches.count > 0)
+
   var s = str
   for match in matches.reversed() {
     let replacement =
       regex.replacementString(for: match,
                               in: s,
                               offset: 0,
-                              template: "<strong>$1</strong>")
+                              template: template)
 
     s.replaceSubrange(s.range(from: match.range)!, with: replacement)
   }
@@ -459,7 +467,7 @@ func unzip<K, V>(_ array: [(key: K, value: V)]) -> ([K], [V]) {
 /// Create a markdown string for an array of files.
 /// - parameter files: An array of files (usually part of a project,
 ///     or an evidence folder).
-func makeMarkdownFrom(_ files: [File]) -> String {
+public func makeMarkdownFrom(_ files: [File]) -> String {
   var markdown = ""
   files.forEach { file in
     let content = try! String(contentsOfFile: file.name)

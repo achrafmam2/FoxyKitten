@@ -21,6 +21,8 @@ public class FoxyClang {
   /// Mapping between Usrs and function Definitions.
   private let usrToFunctionDefinition: [String: Cursor]
 
+  /// Represent the name of the project.
+  /// It takes the name of the folder project or file project.
   public var name: String? {
     if let last = path.split(separator: "/").last {
       return String(last)
@@ -36,6 +38,13 @@ public class FoxyClang {
   /// Represents the function usrs in the project.
   public var usrs: [String] {
     return self.usrToFunctionDefinition.map{$0.key}.sorted()
+  }
+
+  /// Files that constitute the project.
+  public var files: [File] {
+    return units.compactMap { unit in
+      return unit.getFile(for: unit.spelling)
+    }
   }
 
   /// Gets function definition for given USR.
@@ -189,20 +198,5 @@ public class FoxyClang {
     }
 
     return muttableUsrToDefinition
-  }
-}
-
-extension FoxyClang {
-  public var markdown: String {
-    var out = ""
-    for unit in units {
-      let content = try! String(contentsOfFile: unit.spelling)
-      
-      out += "#### \(unit.spelling)\n\n"
-      out += "```\n" + content + "```\n"
-      out += "---\n"
-    }
-
-    return out
   }
 }
