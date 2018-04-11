@@ -11,11 +11,11 @@ struct CommandLineOptions {
 
 /// Parse Command line arguments.
 /// In case of error print usage message.
-/// - returns: Command line options.
+/// - returns: Command line options or nil in case of error.
 func parseCommandLineArguments() -> CommandLineOptions? {
   let parser = ArgumentParser(
-    usage: "[window threshold srcFolder]",
-    overview: "Check plagiarism in Clang projects.")
+    usage: "[window threshold path]",
+    overview: "Check plagiarism in C/C++ projects.")
 
   let windowOption = parser.add(option: "--window", shortName: "-w", kind: Int.self)
   let thresholdOption = parser.add(option: "--threshold", shortName: "-t", kind: Int.self)
