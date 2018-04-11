@@ -1,6 +1,6 @@
 import Foundation
 
-struct SuffixArray<T: Comparable> {
+public struct SuffixArray<T: Comparable> {
   /// Input string.
   let arr: [T]
 
@@ -16,7 +16,7 @@ struct SuffixArray<T: Comparable> {
 
   /// Create the suffix array of `s`.
   /// - parameter s: Input string.
-  init(_ s: [T]) {
+  public init(_ s: [T]) {
     arr = s
     n = arr.count
     m = Int(ceil(log2(Double(n))))
@@ -82,7 +82,7 @@ extension SuffixArray {
   /// - parameters:
   ///   - a : Index of the first suffix.
   ///   - b : Index of the second suffix.
-  func lcp(_ a: Int, _ b: Int) -> Int {
+  public func lcp(_ a: Int, _ b: Int) -> Int {
     // TODO: throw in case `a` or `b` are out of range.
     var size = 0, x = a, y = b
     for j in (0..<m).reversed() {
@@ -102,7 +102,7 @@ extension SuffixArray {
 extension SuffixArray where T == Character {
   /// Build suffix array from a string.
   /// - parameter str: A String.
-  init(_ str: String) {
+  public init(_ str: String) {
     let arr = str.map {$0}
     self.init(arr)
   }

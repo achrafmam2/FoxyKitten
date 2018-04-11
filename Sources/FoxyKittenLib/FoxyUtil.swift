@@ -3,12 +3,13 @@ import ClangUtil
 import Matching
 import Foundation
 import cclang
+import ccmark
 
-struct FoxyOptions {
+public struct FoxyOptions {
   let windownSize: Int
   let followDependencies: Bool
 
-  static var `default`: FoxyOptions {
+  public static var `default`: FoxyOptions {
     return FoxyOptions(windownSize: 4, followDependencies: false)
   }
 }
@@ -18,7 +19,7 @@ struct FoxyOptions {
 ///   - usr: A valid USR in `p`.
 ///   - p: A FoxyClang project.
 ///   - options: Options used to customize extraction
-func extractNgrams(
+public func extractNgrams(
   from usr: String,
   in p: FoxyClang,
   using options: FoxyOptions) -> [Int] {
@@ -39,7 +40,7 @@ func extractNgrams(
 ///   - p: A FoxyClang project.
 ///   - options: Options used to customize extraction.
 /// - returns: an array of ngram hashes.
-func extractNgrams(from p: FoxyClang, using options: FoxyOptions) -> [Int] {
+public func extractNgrams(from p: FoxyClang, using options: FoxyOptions) -> [Int] {
   // For each function get its features.
   return p.usrs.flatMap { usr -> [Int] in
     return extractNgrams(from: usr, in: p, using: options)
@@ -53,7 +54,7 @@ func extractNgrams(from p: FoxyClang, using options: FoxyOptions) -> [Int] {
 /// - parameters:
 ///   - a: Multiset.
 ///   - b: Multiset.
-func foxyCoefficient<T>(_ a: MultiSet<T>, _ b: MultiSet<T>) -> Double {
+public func foxyCoefficient<T>(_ a: MultiSet<T>, _ b: MultiSet<T>) -> Double {
   let intersection = Double(a.intersection(b).count)
   let union = Double(a.union(b).count)
   let largest = Double(max(a.count, b.count))
@@ -68,7 +69,7 @@ func foxyCoefficient<T>(_ a: MultiSet<T>, _ b: MultiSet<T>) -> Double {
 ///   - q: A FoxyClang project.
 ///   - q: Options used to make computation customizeable.
 /// - returns:  A value between 0 and 1.0.
-func computeSimilarity(
+public func computeSimilarity(
   _ p: FoxyClang,
   _ q: FoxyClang,
   using options: FoxyOptions = .default) -> Double {
@@ -88,7 +89,7 @@ func computeSimilarity(
 ///   - options: Options used for custom ngram extraction.
 /// - note: rows represent the functions from the first project, while the
 ///     colums represent the function from the second.
-func buildAssignementMatrix(
+public func buildAssignementMatrix(
   _ first: FoxyClang,
   _ second: FoxyClang,
   using options: FoxyOptions) -> [[Int]] {
@@ -115,28 +116,11 @@ func buildAssignementMatrix(
   return costs
 }
 
-struct Similarity {
-  /// Represents where similarity occurs.
-  let firstLocation: SourceRange
-
-  /// Represents where similarity occurs.
-  let secondLocation: SourceRange
-}
-
-extension CountableRange: Comparable where CountableRange.Bound == Int {
-  public static func < (lhs: CountableRange<Bound>, rhs: CountableRange<Bound>) -> Bool {
-    if lhs.lowerBound == rhs.lowerBound {
-      return lhs.upperBound < rhs.upperBound
-    }
-    return lhs.lowerBound < rhs.lowerBound
-  }
-}
-
 /// Remove Intersecting ranges.
 /// In case two ranges intersect keep the largest one.
 /// - parameter ranges: A range.
 private func removeIntersecting(
-  from ranges: [CountableRange<Int>]) -> [CountableRange<Int>] {
+  from ranges: [SourceRange]) -> [SourceRange] {
   // Sort the ranges.
   let sorted = ranges.sorted()
 
@@ -163,12 +147,12 @@ private func removeIntersecting(
 
 /// Remove Noisy ranges.
 /// It removes all ranges that overlap.
-func removeNoise(
-  from tupRanges: [(CountableRange<Int>, CountableRange<Int>)]) -> [(CountableRange<Int>, CountableRange<Int>)] {
+private func removeNoise(
+  from tupRanges: [(SourceRange, SourceRange)]) -> [(SourceRange, SourceRange)] {
 
   var tups = tupRanges.sorted { $0.0 < $1.0 }
 
-  var firstPass = [(CountableRange<Int>, CountableRange<Int>)]()
+  var firstPass = [(SourceRange, SourceRange)]()
   var nonIntersecting = Array(removeIntersecting(from: tups.map { $0.0 }).reversed())
   for tup in tups {
     guard let top = nonIntersecting.last else {
@@ -182,7 +166,7 @@ func removeNoise(
   assert(nonIntersecting.isEmpty)
 
   tups = firstPass.map { ($0.1, $0.0) }.sorted { $0.0 < $1.0 }
-  firstPass = [(CountableRange<Int>, CountableRange<Int>)]()
+  firstPass = [(SourceRange, SourceRange)]()
   nonIntersecting = Array(removeIntersecting(from: tups.map { $0.0 }).reversed())
   for tup in tups {
     guard let top = nonIntersecting.last else {
@@ -198,7 +182,17 @@ func removeNoise(
   return firstPass.map { ($0.1, $0.0) }
 }
 
-private func setupForBlaming(_ proj: FoxyClang) -> ([Cursor], [String]) {
+/// Processes a `FoxyClang` project for the Sherlock analysis.
+/// The Sherlock analysis checks for similar substring AST nodes
+/// in two projects using a suffix array. The first pass consists of
+/// flattening the AST tree. The node's `kind` is used for comparison
+/// the `cursors` are used later for extracting other metadate (e.g.,
+/// the location of the match ...).
+///
+/// - parameter proj: A `FoxyClang` project.
+///
+/// - returns: A tuple (Array of AST node, Array of AST kinds)
+private func preprocessForSherlockAnalysis(_ proj: FoxyClang) -> ([Cursor], [String]) {
   let cursors = proj.usrs.flatMap { usr -> [Cursor] in
     let def = proj.definitionCursor(withUsr: usr)!
     return [type(of: def).null] + flattenAst(root: def)
@@ -212,18 +206,20 @@ private func setupForBlaming(_ proj: FoxyClang) -> ([Cursor], [String]) {
   return (cursors, cursorKinds)
 }
 
-/// Blame similar lines in two projects.
+/// Lookup similar occurences in two projects.
 /// - parameters:
 ///   - first: A FoxyClang project.
 ///   - second: A FoxyClang project.
+///   - threshold: The number of common entities (AST nodes) required to be
+///       considered a plagiarism.
 /// - returns: An array of similarities.
-func blame(
+public func runSherlockFoxy(
   _ first: FoxyClang,
   _ second: FoxyClang,
-  treshold: Int) -> [Similarity] {
+  treshold: Int) -> [Evidence] {
 
-  let (cursors_0, cursorKinds_0) = setupForBlaming(first)
-  let (cursors_1, cursorKinds_1) = setupForBlaming(second)
+  let (cursors_0, cursorKinds_0) = preprocessForSherlockAnalysis(first)
+  let (cursors_1, cursorKinds_1) = preprocessForSherlockAnalysis(second)
 
   let n = cursorKinds_0.count
 
@@ -258,47 +254,201 @@ func blame(
     }
   }
 
-  (ranges_0, ranges_1) = unzip(removeNoise(from:
+  let rangeLocation_0 = ranges_0.map { r -> SourceRange  in
+    let start = cursors_0[r.lowerBound].range.start
+    let end = cursors_0[r.upperBound - 1].range.end
+    assert(cursors_0[r.upperBound - 1].isNull == false)
+    //    cursors_0[r0].forEach { cursor in
+    //      if end.offset < cursor.range.end.offset {
+    //        end = cursor.range.end
+    //      }
+    //    }
+
+    return SourceRange(start: start, end: end)
+  }
+
+  let rangeLocation_1 = ranges_1.map { r -> SourceRange  in
+    let start = cursors_1[r.lowerBound].range.start
+    let end = cursors_1[r.upperBound - 1].range.end
+    assert(cursors_1[r.upperBound - 1].isNull == false)
+    //    cursors_0[r0].forEach { cursor in
+    //      if end.offset < cursor.range.end.offset {
+    //        end = cursor.range.end
+    //      }
+    //    }
+
+    return SourceRange(start: start, end: end)
+  }
+
+  let (r0, r1) = unzip(removeNoise(from:
     (0..<ranges_0.count).map {
-      return (ranges_0[$0], ranges_1[$0])
+      return (rangeLocation_0[$0], rangeLocation_1[$0])
   }))
 
-  var similarities = [Similarity]()
-  for i in (0..<ranges_0.count) {
-    let r0 = ranges_0[i]
-    // Get range.
-    var start = cursors_0[r0.lowerBound].range.start
-    var end = start
-    cursors_0[r0].forEach { cursor in
-      if end.offset < cursor.range.end.offset {
-        end = cursor.range.end
-      }
-    }
-    let firstLoc = SourceRange(start: start, end: end)
-
-    let r1 = ranges_1[i]
-    // Get range.
-    start = cursors_1[r1.lowerBound].range.start
-    end = start
-    cursors_1[r1].forEach { cursor in
-      if end.offset < cursor.range.end.offset {
-        end = cursor.range.end
-      }
-    }
-    let secondLoc = SourceRange(start: start, end: end)
+  var similarities = [Evidence]()
+  for i in (0..<r0.count) {
+    let firstLoc = SourceRange(start: r0[i].start, end: r0[i].end)
+    let secondLoc = SourceRange(start: r1[i].start, end: r1[i].end)
 
     similarities.append(
-      Similarity(firstLocation: firstLoc,
-                 secondLocation: secondLoc))
+      Evidence(lhs: EvidenceChunk(location: firstLoc),
+            rhs: EvidenceChunk(location: secondLoc)))
   }
 
   return similarities
 }
 
+/// Blames a string using evidence chunks.
+/// Blaming consists of delimiting the parts of interest by
+/// `{{$}}`. For example: "{{$}} some plagiariased code here {{$}}".
+/// The blaming is done after the Sherlock analysis.
+/// The blamed string can be easilly highlighted afterwards by looking for
+/// the delimiters.
+/// - parameters:
+///   - str: The string to blame. This is one of the files of a project.
+///   - chunks: Plagiarism evidence.
+/// - returns: A blamed string.
+public func blame(_ str: String, on chunks: [EvidenceChunk]) -> String {
+  var tagged = str
+
+  for chunk in chunks.reversed() {
+    let file = chunk.location.start.file
+    let start = chunk.location.start.offset
+    let end = chunk.location.end.offset
+    let uuid = chunk.uuid!
+
+    let cStr =
+      try! [CChar](String(contentsOfFile: file.name).utf8CString[start ... end]) + [0]
+    let pattern = "(" + NSRegularExpression.escapedPattern(for: String(cString: cStr)) + ")"
+
+//        DEBUG SECTION
+//        print(">>>>>>>>>>")
+//        print(String(cString: cStr))
+//        print("<<<<\n")
+
+
+    let regex = try! NSRegularExpression(
+      pattern: pattern, options: [.dotMatchesLineSeparators])
+
+    assert(regex.numberOfCaptureGroups == 1)
+
+    assert(regex.numberOfMatches(
+      in: tagged,
+      options: [],
+      range: NSRange(location: 0, length: tagged.utf16.count)) >= 1)
+
+    tagged = regex.stringByReplacingMatches(
+      in: tagged,
+      options: [],
+      range: NSRange(location: 0, length: tagged.utf16.count),
+      withTemplate: "{{\(uuid)}}$1{{\(uuid)}}")
+
+//     DEBUG SECTION
+//    let filemanager = FileManager.default
+//    filemanager.createFile(
+//      atPath: "/tmp/result.html", contents: tagged.data(using: .utf16))
+
+  }
+
+//  DEBUG SECTION
+//  let root = cmark_parse_document(tagged, tagged.utf16.count, CMARK_OPT_DEFAULT)
+//  let s = cmark_render_html(root, CMARK_OPT_DEFAULT)
+//
+//  let filemanager = FileManager.default
+//  filemanager.createFile(
+//    atPath: "/tmp/result.html", contents: String(cString: s!).data(using: .utf16))
+
+
+  return tagged
+}
+
+/// Highlight a blamed string.
+/// - parameter str: A blamed string.
+public func highlight(
+  _ str: String,
+  forUUID uuid: UUID,
+  withTemplate template: String) -> String {
+
+  let delim = NSRegularExpression.escapedPattern(for: "{{\(uuid)}}")
+  let pattern = delim  + "(.*?)" + delim
+  let regex = try! NSRegularExpression(
+    pattern: pattern,
+    options: [.dotMatchesLineSeparators])
+
+  let matches = regex.matches(
+    in: str,
+    options: [],
+    range: NSRange(location: 0, length: str.utf16.count))
+
+  assert(matches.count > 0)
+
+  var s = str
+  for match in matches.reversed() {
+    let replacement =
+      regex.replacementString(for: match,
+                              in: s,
+                              offset: 0,
+                              template: template)
+
+    s.replaceSubrange(s.range(from: match.range)!, with: replacement)
+  }
+
+  return s
+}
+
+extension String {
+  var nsrange: NSRange {
+    return NSRange(location: 0, length: utf16.count)
+  }
+
+  func range(from nsrange: NSRange) -> Range<Index>? {
+    guard let range = Range(nsrange) else { return nil }
+
+    let start = utf16.index(utf16.startIndex, offsetBy: range.lowerBound)
+    let end = utf16.index(utf16.startIndex, offsetBy: range.upperBound)
+
+    return start..<end
+  }
+}
+
+extension SourceRange: Comparable {
+  public static func == (lhs: SourceRange, rhs: SourceRange) -> Bool {
+    return lhs.start.file.name == rhs.start.file.name &&
+      lhs.start.offset == rhs.start.offset && lhs.end.offset == rhs.end.offset
+  }
+
+  public static func < (lhs: SourceRange, rhs: SourceRange) -> Bool {
+    if lhs.start.file.name == rhs.start.file.name {
+      if lhs.start.offset ==  rhs.start.offset {
+        return lhs.end.offset < rhs.end.offset
+      }
+      return lhs.start.offset < rhs.start.offset
+    }
+    return lhs.start.file.name < rhs.start.file.name
+  }
+
+  /// Tells if two `SourceRange`s overlap or not.
+  func overlaps(_ other: SourceRange) -> Bool {
+    if self.start.file.name != other.start.file.name {
+      return false
+    }
+
+    let r1 = (start.offset ... end.offset)
+    let r2 = (other.start.offset ... other.end.offset)
+
+    return r1.overlaps(r2)
+  }
+
+  /// Length of the range in terms of offset.
+  var count: Int {
+    return (start.offset ... end.offset).count
+  }
+}
+
 /// Unzip an `Array` of key/value tuples.
 ///
-/// - Parameter array: `Array` of key/value tuples.
-/// - Returns: A tuple with two arrays, an `Array` of keys and an `Array` of values.
+/// - parameter array: `Array` of key/value tuples.
+/// - returns: A tuple with two arrays, an `Array` of keys and an `Array` of values.
 func unzip<K, V>(_ array: [(key: K, value: V)]) -> ([K], [V]) {
   var keys = [K]()
   var values = [V]()
@@ -312,4 +462,19 @@ func unzip<K, V>(_ array: [(key: K, value: V)]) -> ([K], [V]) {
   }
 
   return (keys, values)
+}
+
+/// Create a markdown string for an array of files.
+/// - parameter files: An array of files (usually part of a project,
+///     or an evidence folder).
+public func makeMarkdownFrom(_ files: [File]) -> String {
+  var markdown = ""
+  files.forEach { file in
+    let content = try! String(contentsOfFile: file.name)
+
+    markdown += "#### \(file.name)\n\n"
+    markdown += "```\n" + content + "```\n"
+    markdown += "---\n"
+  }
+  return markdown
 }

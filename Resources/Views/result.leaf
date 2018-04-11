@@ -1,0 +1,32 @@
+<html>
+<head>
+<style>
+.split {
+  height: 100%;
+  width: 50%;
+  position: fixed;
+  z-index: 1;
+  top: 0;
+  overflow-x: hidden;
+  padding-top: 20px;
+}
+
+/* Control the left side */
+.left {
+  left: 0;
+}
+
+/* Control the right side */
+.right {
+  right: 0;
+}
+
+</style>
+</head>
+<body>
+
+<iframe src="http://localhost:8080/#(lhs-link)" id="lhs" class="split left"></iframe>
+<iframe src="http://localhost:8080/#(rhs-link)" id="rhs" class="split right"></iframe>
+
+</body>
+</html>

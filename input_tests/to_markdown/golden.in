@@ -1,0 +1,16 @@
+#### input_tests/to_markdown/main.c
+
+```
+int main(void) {
+  return 0;
+}
+```
+---
+#### input_tests/to_markdown/roll.c
+
+```
+int roll() {
+  return 4;
+}
+```
+---

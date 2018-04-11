@@ -1,20 +1,20 @@
 import Foundation
 
 /// Represents a set with duplicates.
-struct MultiSet<T: Hashable>: Sequence {
+public struct MultiSet<T: Hashable>: Sequence {
   /// Keeps the count of elements.
   private var elementsCount = [T : Int]()
 
   /// Represents the number of elements in the container.
-  var count = 0
+  public var count = 0
 
   /// Constructs a multiset from an comma separated list.
-  init(arrayLiteral: T...) {
+  public init(arrayLiteral: T...) {
     self.init(arrayLiteral)
   }
 
   /// Constructs a multiset from an array.
-  init(_ arr: [T]) {
+  public init(_ arr: [T]) {
     for e in arr {
       elementsCount[e] = (elementsCount[e] ?? 0) + 1
       count += 1
@@ -22,11 +22,11 @@ struct MultiSet<T: Hashable>: Sequence {
   }
 
   /// Constructs an empty multiset.
-  init() {}
+  public init() {}
 
   /// Adds a new element to the multiset.
   /// - parameter newElement: Element to add to the multiset.
-  mutating func add(_ newElement: T) {
+  public mutating func add(_ newElement: T) {
     elementsCount[newElement] = (elementsCount[newElement] ?? 0) + 1
     count += 1
   }
@@ -34,7 +34,7 @@ struct MultiSet<T: Hashable>: Sequence {
   /// Removes a single occurence the passed element.
   /// - parameter member: Element to delete.
   /// - returns: True in case of success, false otherwise.
-  @discardableResult mutating func remove(_ member: T) -> Bool {
+  @discardableResult public mutating func remove(_ member: T) -> Bool {
     guard elementsCount[member] != nil else {
       return false
     }
@@ -51,7 +51,7 @@ struct MultiSet<T: Hashable>: Sequence {
   /// Creates an intersection of two multiset.
   /// - parameter other: A multiset.
   /// - returns: Intersection of two multisets.
-  func intersection(_ other: MultiSet) -> MultiSet {
+  public func intersection(_ other: MultiSet) -> MultiSet {
     var ret = MultiSet()
     for (element, count) in elementsCount {
       let m = Swift.min(count, other.elementsCount[element] ?? 0)
@@ -65,7 +65,7 @@ struct MultiSet<T: Hashable>: Sequence {
   /// where `x` <= `y`, then in the union element `e` will be repeated `y` times.
   /// - parameter other: A multiset.
   /// - returns: Union of two multisets.
-  func union(_ other: MultiSet) -> MultiSet {
+  public func union(_ other: MultiSet) -> MultiSet {
     var ret = MultiSet()
 
     var all = Set<T>()
@@ -88,15 +88,15 @@ struct MultiSet<T: Hashable>: Sequence {
   }
 
   /// Makes an iterator.
-  func makeIterator() -> MultiSetIterator<T> {
+  public func makeIterator() -> MultiSetIterator<T> {
     return MultiSetIterator(self.elementsCount)
   }
 }
 
 
 /// Represents a multiset iterator.
-struct MultiSetIterator<T: Hashable>: IteratorProtocol {
-  typealias Element = T
+public struct MultiSetIterator<T: Hashable>: IteratorProtocol {
+  public typealias Element = T
 
   /// Represents the multiset elements.
   let map: [T: Int]
@@ -117,7 +117,7 @@ struct MultiSetIterator<T: Hashable>: IteratorProtocol {
   }
 
   /// Get next element of the sequence.
-  mutating func next() -> MultiSetIterator<T>.Element? {
+  mutating public func next() -> MultiSetIterator<T>.Element? {
     guard let key = currentKey, rem > 0 else {
       guard let element = iterator.next() else {
         return nil

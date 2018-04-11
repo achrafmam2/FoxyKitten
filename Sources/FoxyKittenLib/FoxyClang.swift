@@ -1,18 +1,19 @@
 import Clang
 import Foundation
 import cclang
+import ccmark
 
-enum ClangProjectError: Error {
+public enum ClangProjectError: Error {
   case pathError
   case empty
 }
 
-struct FoxyClang {
+public class FoxyClang {
   /// Index that contains all translation units of the project.
   private let index = Index()
 
   /// Project path.
-  private let path: String
+  public let path: String
 
   /// Translation Units of the project.
   private let units: [TranslationUnit]
@@ -20,20 +21,36 @@ struct FoxyClang {
   /// Mapping between Usrs and function Definitions.
   private let usrToFunctionDefinition: [String: Cursor]
 
+  /// Represent the name of the project.
+  /// It takes the name of the folder project or file project.
+  public var name: String? {
+    if let last = path.split(separator: "/").last {
+      return String(last)
+    }
+    return nil
+  }
+
   /// Represents the count of functions in the project.
-  var count: Int {
+  public var count: Int {
     return self.usrToFunctionDefinition.count
   }
 
   /// Represents the function usrs in the project.
-  var usrs: [String] {
+  public var usrs: [String] {
     return self.usrToFunctionDefinition.map{$0.key}.sorted()
+  }
+
+  /// Files that constitute the project.
+  public var files: [File] {
+    return units.compactMap { unit in
+      return unit.getFile(for: unit.spelling)
+    }
   }
 
   /// Gets function definition for given USR.
   /// - parameter usr: USR of the function.
   /// - note: The usrs can be fetched using `functionUsrs`.
-  func definitionCursor(withUsr usr: String) -> Cursor? {
+  public func definitionCursor(withUsr usr: String) -> Cursor? {
     return self.usrToFunctionDefinition[usr]
   }
 
@@ -42,7 +59,7 @@ struct FoxyClang {
   /// - throws:
   ///   - `ClangProjectError.empty` in case no translation unit can be created.
   ///   - `ClangProjectError.pathError` if the path given does not exist.
-  init(path: String) throws {
+  public init(path: String) throws {
     self.path = path
     self.units =
       try FoxyClang.makeTranslationUnits(in: self.path,
@@ -58,7 +75,7 @@ struct FoxyClang {
   }
 
   /// Returns function definitions for all functions reacheable from `cursor`.
-  func getDependencyGraph(of name: String) -> [Cursor] {
+  public func getDependencyGraph(of name: String) -> [Cursor] {
     let cursor = self.usrToFunctionDefinition[name]!
 
     // Get all dependencies in a depth first traversal.
