@@ -4,33 +4,35 @@ import Vapor
 import Foundation
 import FoxyKittenLib
 import ccmark
+import Utility
+import Basic
 
-// Parse CommandLine arguments.
-if CommandLine.argc != 4 {
-  print("Usage: [window srcFolder]")
+let executableName = CommandLine.arguments[0]
+
+guard let cmdOptions = parseCommandLineArguments() else {
   exit(EXIT_SUCCESS)
 }
 
-let w = Int(CommandLine.arguments[1])!
-let treshold = Int(CommandLine.arguments[2])!
-let srcFolder = CommandLine.arguments[3]
+let w = cmdOptions.windowLength
+let threshold = cmdOptions.threshold
+let inputPath = cmdOptions.inputPath
 
 print("window = \(w)")
-print("treshold = \(treshold)")
-print("srcFolder = \(srcFolder)")
+print("treshold = \(threshold)")
+print("path = \(inputPath)")
 print("")
 
 // Read projects.
 let filemanager = FileManager.default
 // TODO: Handle gracefully the case of an invalid `srcFolder`.
-let paths = try! filemanager.contentsOfDirectory(atPath: srcFolder)
+let paths = try! filemanager.contentsOfDirectory(atPath: inputPath)
 
 var projects = [FoxyClang]()
 for path in paths {
   print(path, terminator: " ... ")
   do {
     // TODO: Handle concatenation of two paths.
-    let fullPath = srcFolder + "/" + path
+    let fullPath = inputPath + "/" + path
     let proj = try FoxyClang(path: fullPath)
     projects.append(proj)
 
@@ -65,7 +67,7 @@ for id in (0..<projects.count) {
 
   let evidences = runSherlockFoxy(orig_proj,
                                closest_project,
-                               treshold: treshold)
+                               treshold: threshold)
 
 
   let folder = EvidenceFolder(culprit: orig_proj, evidences: evidences)
@@ -75,7 +77,7 @@ for id in (0..<projects.count) {
 // The contents of main are wrapped in a do/catch block because any errors that get raised to the top level will crash Xcode
 do {
   var config = Config.default()
-  var env = try Environment.detect(arguments: [CommandLine.arguments[0]])
+  var env = try Environment.detect(arguments: [executableName])
   var services = Services.default()
 
   try FoxyVapor.configure(&config, &env, &services)
