@@ -16,10 +16,9 @@ let parser = ArgumentParser(
   usage: "[window threshold srcFolder]",
   overview: "Check plagiarism in Clang projects.")
 
-let windowOption = parser.add(option: "--window", kind: Int.self)
-let thresholdOption = parser.add(option: "--treshold", kind: Int.self)
-let srcFolderOption = parser.add(option: "--src", kind: String.self)
-
+let windowOption = parser.add(option: "--window", shortName: "-w", kind: Int.self)
+let thresholdOption = parser.add(option: "--threshold", shortName: "-t", kind: Int.self)
+let srcFolderOption = parser.add(option: "--src", shortName: "-src", kind: String.self)
 
 var w = 0
 var threshold = 0
@@ -44,16 +43,6 @@ do {
 } catch let error {
   print(error.localizedDescription)
 }
-
-// Parse CommandLine arguments.
-if CommandLine.argc != 4 {
-  print("Usage: [window srcFolder]")
-  exit(EXIT_SUCCESS)
-}
-
-//let w = Int(CommandLine.arguments[1])!
-//let threshold = Int(CommandLine.arguments[2])!
-//let srcFolder = CommandLine.arguments[3]
 
 print("window = \(w)")
 print("treshold = \(threshold)")
