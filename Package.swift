@@ -22,10 +22,7 @@ let package = Package(
     // Targets can depend on other targets in this package, and on products in packages which this package depends on.
     .target(
       name: "FoxyKitten",
-      dependencies: ["FoxyVapor", "Utility"]),
-    .target(
-      name: "FoxyVapor",
-      dependencies: ["FoxyKittenLib", "Vapor", "Leaf"]),
+      dependencies: ["FoxyKittenLib", "Utility", "Vapor", "Leaf"]),
     .target(
       name: "FoxyKittenLib",
       dependencies: ["ClangUtil", "Matching"]),
