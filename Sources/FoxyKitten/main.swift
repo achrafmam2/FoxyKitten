@@ -4,6 +4,46 @@ import Vapor
 import Foundation
 import FoxyKittenLib
 import ccmark
+import Utility
+import Basic
+
+let executableName = CommandLine.arguments[0]
+
+// Command line arguments arguments.
+let arguments = Array(ProcessInfo.processInfo.arguments.dropFirst())
+
+let parser = ArgumentParser(
+  usage: "[window threshold srcFolder]",
+  overview: "Check plagiarism in Clang projects.")
+
+let windowOption = parser.add(option: "--window", kind: Int.self)
+let thresholdOption = parser.add(option: "--treshold", kind: Int.self)
+let srcFolderOption = parser.add(option: "--src", kind: String.self)
+
+
+var w = 0
+var threshold = 0
+var srcFolder = ""
+
+do {
+  let parsedArguments = try parser.parse()
+
+  guard let window = parsedArguments.get(windowOption),
+        let thresh = parsedArguments.get(thresholdOption),
+        let src    = parsedArguments.get(srcFolderOption) else {
+
+    parser.printUsage(on: stdoutStream)
+    exit(EXIT_SUCCESS)
+  }
+
+  w = window
+  threshold = thresh
+  srcFolder = src
+} catch let error as ArgumentParserError {
+  print(error.description)
+} catch let error {
+  print(error.localizedDescription)
+}
 
 // Parse CommandLine arguments.
 if CommandLine.argc != 4 {
@@ -11,12 +51,12 @@ if CommandLine.argc != 4 {
   exit(EXIT_SUCCESS)
 }
 
-let w = Int(CommandLine.arguments[1])!
-let treshold = Int(CommandLine.arguments[2])!
-let srcFolder = CommandLine.arguments[3]
+//let w = Int(CommandLine.arguments[1])!
+//let threshold = Int(CommandLine.arguments[2])!
+//let srcFolder = CommandLine.arguments[3]
 
 print("window = \(w)")
-print("treshold = \(treshold)")
+print("treshold = \(threshold)")
 print("srcFolder = \(srcFolder)")
 print("")
 
@@ -65,7 +105,7 @@ for id in (0..<projects.count) {
 
   let evidences = runSherlockFoxy(orig_proj,
                                closest_project,
-                               treshold: treshold)
+                               treshold: threshold)
 
 
   let folder = EvidenceFolder(culprit: orig_proj, evidences: evidences)
@@ -75,7 +115,7 @@ for id in (0..<projects.count) {
 // The contents of main are wrapped in a do/catch block because any errors that get raised to the top level will crash Xcode
 do {
   var config = Config.default()
-  var env = try Environment.detect(arguments: [CommandLine.arguments[0]])
+  var env = try Environment.detect(arguments: [executableName])
   var services = Services.default()
 
   try FoxyVapor.configure(&config, &env, &services)
