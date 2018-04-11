@@ -25,6 +25,15 @@ func mark(
     markedStr = highlight(markedStr, forUUID: uuid, withTemplate: template)
   }
 
+  // Add syntax highliting.
+  markedStr += "<script src=\"https://cdn.rawgit.com/google/code-prettify/master/loader/run_prettify.js\"></script>\n"
+  let pattern = NSRegularExpression.escapedPattern(for: "<code>")
+  let regex = try! NSRegularExpression(pattern: pattern)
+
+  markedStr = regex.stringByReplacingMatches(in: markedStr,
+                                             options: [],
+                                             range: NSRange(location: 0, length: markedStr.utf16.count),
+                                             withTemplate: "<code class=\"prettyprint\">")
   return markedStr
 }
 

@@ -56,7 +56,7 @@ public func routes(folders: [EvidenceFolder], using router: Router) throws {
       makeMarkdownFrom(folder.culprit.files),
       on: folder.evidences.map {$0.lhs},
       uiids: folder.evidences.map({$0.uuid}),
-      withTemplateFormat: "<a href=\"http://localhost:8080/rhs/\(id)#%@\" id=\"%@\" target=\"rhs\">$1</a>")
+      withTemplateFormat: "<a href=\"http://localhost:8080/rhs/\(id)#%@\" id=\"%@\" target=\"rhs\" style=\"background-color: #d5f4e6;\">$1</a>")
 
     return try request.view().render(template: origMarked.data(using: .utf16)!, .null)
   }
@@ -74,7 +74,7 @@ public func routes(folders: [EvidenceFolder], using router: Router) throws {
       makeMarkdownFrom(folder.evidenceFiles),
       on: folder.evidences.map {$0.rhs},
       uiids: folder.evidences.map({$0.uuid}),
-      withTemplateFormat: "<a href=\"http://localhost:8080/lhs/\(id)#%@\" id=\"%@\" target=\"lhs\">$1</a>")
+      withTemplateFormat: "<a href=\"http://localhost:8080/lhs/\(id)#%@\" id=\"%@\" target=\"lhs\" style=\"background-color: #d5f4e6;\">$1</a>")
 
     return try request.view().render(template: evidenceMarked.data(using: .utf16)!, .null)
   }
