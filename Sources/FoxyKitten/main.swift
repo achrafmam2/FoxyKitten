@@ -24,31 +24,31 @@ print("path = \(inputPath)")
 print("")
 
 // Read projects.
-let filemanager = FileManager.default
-// TODO: Handle gracefully the case of an invalid `srcFolder`.
-let paths = try! filemanager.contentsOfDirectory(atPath: inputPath)
-
 var projects = [FoxyClang]()
-for path in paths {
-  print(path, terminator: " ... ")
-  do {
-    // TODO: Handle concatenation of two paths.
-    let fullPath = inputPath + "/" + path
-    let proj = try FoxyClang(path: fullPath)
-    projects.append(proj)
+do {
+  let filemanager = FileManager.default
+  let paths = try filemanager.contentsOfDirectory(atPath: inputPath)
 
-    print("parsed succesfully.")
-  } catch {
-    print("\(error).")
+  for path in paths {
+    print(path, terminator: " ... ")
+    do {
+      let fullPath = concatenatePaths(inputPath, path)
+      let proj = try FoxyClang(path: fullPath)
+      projects.append(proj)
+
+      print("parsed succesfully.")
+    } catch {
+      print("\(error).")
+    }
   }
+} catch {
+  print(error.localizedDescription)
+  exit(EXIT_FAILURE)
 }
 
 // Make directory where to store the results.
 let resultUUID = UUID()
 print("\nResult Id: \(resultUUID.uuidString)\n")
-let resultsFolder = "/tmp/" + resultUUID.uuidString
-// TODO: Handle the case it is impossible to create a directory.
-try! filemanager.createDirectory(atPath: resultsFolder, withIntermediateDirectories: true)
 
 // Process projects.
 var folders = [EvidenceFolder]()
