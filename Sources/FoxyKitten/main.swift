@@ -70,49 +70,6 @@ for id in (0..<projects.count) {
 
   let folder = EvidenceFolder(culprit: orig_proj, evidences: evidences)
   folders.append(folder)
-
-
-//  let filename = resultsFolder + "/" + orig_proj.name! + ".html"
-////  print(filename)
-//
-//  var blamed = blame(makeMarkdownFrom(orig_proj.files), on: chunks)
-//  let root = cmark_parse_document(blamed, blamed.utf16.count, CMARK_OPT_DEFAULT)
-//  blamed = String(cString: cmark_render_html(root, CMARK_OPT_DEFAULT))
-//  blamed = highlight(blamed)
-//
-//  assert(filemanager.createFile(
-//    atPath: filename,
-//    contents: blamed.data(using: .utf16)))
-}
-
-for folder in folders {
-  let culpritFiles = folder.culprit.files
-  let evidenceFiles = folder.evidenceFiles
-  let name = folder.culprit.name!
-
-  let origMarked = mark(
-    makeMarkdownFrom(culpritFiles),
-    on: folder.evidences.map {$0.lhs},
-    uiids: folder.evidences.map({$0.uuid}),
-    withTemplateFormat: "<a href=\"\(name)-rhs#%@\" id=\"%@\">$1</a>")
-
-
-  let evidenceMarked = mark(
-    makeMarkdownFrom(evidenceFiles),
-    on: folder.evidences.map {$0.rhs},
-    uiids: folder.evidences.map({$0.uuid}),
-    withTemplateFormat: "<a href=\"\(name)-rhs#%@\" id=\"%@\">$1</a>")
-
-// DEBUG SESSION
-  var filename = "\(resultsFolder)/\(name)-lhs.html"
-  assert(filemanager.createFile(
-    atPath: filename,
-    contents: origMarked.data(using: .utf16)))
-
-  filename = "\(resultsFolder)/\(name)-rhs.html"
-  assert(filemanager.createFile(
-    atPath: filename,
-    contents: evidenceMarked.data(using: .utf16)))
 }
 
 // The contents of main are wrapped in a do/catch block because any errors that get raised to the top level will crash Xcode
@@ -123,13 +80,87 @@ do {
 
   try FoxyVapor.configure(&config, &env, &services)
 
+  // Register routes to the router
+  let router = EngineRouter.default()
+  //try routes(router)
+  services.register(router, as: Router.self)
+
+  // Results page.
+  router.get("results") { request -> Future<View> in
+    // Creat markdown of the page then convert it to html.
+    var out = "## Results\n"
+    for folder in folders {
+      guard let name = folder.culprit.name else {
+        NSLog("folder \(folder.uuid) without a name")
+        continue
+      }
+      let link = String(format: "result/%d", folder.uuid.hashValue)
+      out += "- [\(name)](\(link))\n"
+    }
+
+    let root = cmark_parse_document(out, out.utf16.count, 0)
+    let html = String(cString: cmark_render_html(root, 0))
+    let htmlData = html.data(using: .utf16)
+
+    return try request.view().render(template: htmlData!, .null)
+  }
+
+  // Individual result.
+  router.get("result", Int.parameter) { request -> Future<View> in
+    let id = try request.parameter(Int.self)
+
+    // TODO: check if id exists.
+    let context = TemplateData.dictionary(
+      [
+       "lhs-link": .string("lhs/\(id)"),
+       "rhs-link": .string("rhs/\(id)"),
+      ]
+    )
+
+    return try request.view().render("result", context)
+  }
+
+  // Lhs
+  router.get("lhs", Int.parameter) { request -> Future<View> in
+    let id = try request.parameter(Int.self)
+
+    guard let folder = folders.first(where: { $0.uuid.hashValue == id}) else {
+      // TODO: return a 404 not found.
+      return try request.view().render("")
+    }
+
+    let origMarked = mark(
+      makeMarkdownFrom(folder.culprit.files),
+      on: folder.evidences.map {$0.lhs},
+      uiids: folder.evidences.map({$0.uuid}),
+      withTemplateFormat: "<a href=\"http://localhost:8080/rhs/\(id)#%@\" id=\"%@\" target=\"rhs\">$1</a>")
+
+    return try request.view().render(template: origMarked.data(using: .utf16)!, .null)
+  }
+
+  // Rhs
+  router.get("rhs", Int.parameter) { request -> Future<View> in
+    let id = try request.parameter(Int.self)
+
+    guard let folder = folders.first(where: { $0.uuid.hashValue == id}) else {
+      // TODO: return a 404 not found.
+      return try request.view().render("")
+    }
+
+    let evidenceMarked = mark(
+      makeMarkdownFrom(folder.evidenceFiles),
+      on: folder.evidences.map {$0.rhs},
+      uiids: folder.evidences.map({$0.uuid}),
+      withTemplateFormat: "<a href=\"http://localhost:8080/lhs/\(id)#%@\" id=\"%@\" target=\"lhs\">$1</a>")
+
+    return try request.view().render(template: evidenceMarked.data(using: .utf16)!, .null)
+  }
+
   let app = try Application(
     config: config,
     environment: env,
     services: services
   )
-
-  try FoxyVapor.boot(app)
 
   try app.run()
 } catch {

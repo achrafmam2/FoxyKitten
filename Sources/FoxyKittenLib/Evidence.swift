@@ -42,6 +42,10 @@ public struct Evidence {
 
 /// Represents all evidences against a file.
 public struct EvidenceFolder {
+  /// Public id for this evidence.
+  /// It is almost always guaranteed to be unique.
+  public let uuid = UUID()
+
   /// The cuplprit project.
   public let culprit: FoxyClang
 
