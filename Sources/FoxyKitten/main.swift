@@ -9,57 +9,30 @@ import Basic
 
 let executableName = CommandLine.arguments[0]
 
-// Command line arguments arguments.
-let arguments = Array(ProcessInfo.processInfo.arguments.dropFirst())
-
-let parser = ArgumentParser(
-  usage: "[window threshold srcFolder]",
-  overview: "Check plagiarism in Clang projects.")
-
-let windowOption = parser.add(option: "--window", shortName: "-w", kind: Int.self)
-let thresholdOption = parser.add(option: "--threshold", shortName: "-t", kind: Int.self)
-let srcFolderOption = parser.add(option: "--src", shortName: "-src", kind: String.self)
-
-var w = 0
-var threshold = 0
-var srcFolder = ""
-
-do {
-  let parsedArguments = try parser.parse()
-
-  guard let window = parsedArguments.get(windowOption),
-        let thresh = parsedArguments.get(thresholdOption),
-        let src    = parsedArguments.get(srcFolderOption) else {
-
-    parser.printUsage(on: stdoutStream)
-    exit(EXIT_SUCCESS)
-  }
-
-  w = window
-  threshold = thresh
-  srcFolder = src
-} catch let error as ArgumentParserError {
-  print(error.description)
-} catch let error {
-  print(error.localizedDescription)
+guard let cmdOptions = parseCommandLineArguments() else {
+  exit(EXIT_SUCCESS)
 }
+
+let w = cmdOptions.windowLength
+let threshold = cmdOptions.threshold
+let inputPath = cmdOptions.inputPath
 
 print("window = \(w)")
 print("treshold = \(threshold)")
-print("srcFolder = \(srcFolder)")
+print("path = \(inputPath)")
 print("")
 
 // Read projects.
 let filemanager = FileManager.default
 // TODO: Handle gracefully the case of an invalid `srcFolder`.
-let paths = try! filemanager.contentsOfDirectory(atPath: srcFolder)
+let paths = try! filemanager.contentsOfDirectory(atPath: inputPath)
 
 var projects = [FoxyClang]()
 for path in paths {
   print(path, terminator: " ... ")
   do {
     // TODO: Handle concatenation of two paths.
-    let fullPath = srcFolder + "/" + path
+    let fullPath = inputPath + "/" + path
     let proj = try FoxyClang(path: fullPath)
     projects.append(proj)
 
