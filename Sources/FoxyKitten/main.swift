@@ -31,8 +31,7 @@ do {
   for path in paths {
     print(path, terminator: " ... ")
     do {
-      // TODO: Handle concatenation of two paths.
-      let fullPath = inputPath + "/" + path
+      let fullPath = concatenatePaths(inputPath, path)
       let proj = try FoxyClang(path: fullPath)
       projects.append(proj)
 
@@ -45,7 +44,6 @@ do {
   print(error.localizedDescription)
   exit(EXIT_FAILURE)
 }
-
 
 // Make directory where to store the results.
 let resultUUID = UUID()
