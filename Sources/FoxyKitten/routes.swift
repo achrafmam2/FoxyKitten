@@ -17,7 +17,7 @@ public func routes(folders: [EvidenceFolder], using router: Router) throws {
         NSLog("folder \(folder.uuid) without a name")
         continue
       }
-      let link = String(format: "result/%d", folder.uuid.hashValue)
+      let link = String(format: "http://localhost:8080/result/%d", folder.uuid.hashValue)
       out += "- [\(name)](\(link))\n"
     }
 
@@ -52,13 +52,14 @@ public func routes(folders: [EvidenceFolder], using router: Router) throws {
       return try request.view().render("")
     }
 
-    let origMarked = mark(
-      makeMarkdownFrom(folder.culprit.files),
-      on: folder.evidences.map {$0.lhs},
-      uiids: folder.evidences.map({$0.uuid}),
-      withTemplateFormat: "<a href=\"http://localhost:8080/rhs/\(id)#%@\" id=\"%@\" target=\"rhs\" style=\"background-color: #d5f4e6;\">$1</a>")
+    let md = makeMarkdownFrom(folder.culprit.files)
+    let template = HtmlBlamer.default.render(md) { blamer in
+      blamer.chunks = folder.evidences.map { $0.lhs }
+      blamer.hyperlinkTagOptions =
+        HyperLinkTagOptions(url: "http://localhost:8080/rhs/\(id)", target: "rhs")
+    }
 
-    return try request.view().render(template: origMarked.data(using: .utf16)!, .null)
+    return try request.view().render(template: template.data(using: .utf16)!, .null)
   }
 
   // Route for the right side (the evidence).
@@ -70,12 +71,13 @@ public func routes(folders: [EvidenceFolder], using router: Router) throws {
       return try request.view().render("")
     }
 
-    let evidenceMarked = mark(
-      makeMarkdownFrom(folder.evidenceFiles),
-      on: folder.evidences.map {$0.rhs},
-      uiids: folder.evidences.map({$0.uuid}),
-      withTemplateFormat: "<a href=\"http://localhost:8080/lhs/\(id)#%@\" id=\"%@\" target=\"lhs\" style=\"background-color: #d5f4e6;\">$1</a>")
+    let md = makeMarkdownFrom(folder.evidenceFiles)
+    let template = HtmlBlamer.default.render(md) { blamer in
+      blamer.chunks = folder.evidences.map { $0.rhs }
+      blamer.hyperlinkTagOptions =
+        HyperLinkTagOptions(url: "http://localhost:8080/lhs/\(id)", target: "lhs")
+    }
 
-    return try request.view().render(template: evidenceMarked.data(using: .utf16)!, .null)
+    return try request.view().render(template: template.data(using: .utf16)!, .null)
   }
 }
