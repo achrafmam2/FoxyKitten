@@ -41,7 +41,7 @@ public struct Evidence {
 }
 
 /// Represents all evidences against a file.
-public struct EvidenceFolder {
+public struct EvidenceFolder : Hashable {
   /// Public id for this evidence.
   /// It is almost always guaranteed to be unique.
   public let uuid = UUID()
@@ -64,5 +64,13 @@ public struct EvidenceFolder {
   public init(culprit: FoxyClang, evidences: [Evidence]) {
     self.culprit = culprit
     self.evidences = evidences
+  }
+
+  public var hashValue: Int {
+    return uuid.hashValue
+  }
+
+  public static func == (lhs: EvidenceFolder, rhs: EvidenceFolder) -> Bool {
+    return lhs.uuid == rhs.uuid
   }
 }
