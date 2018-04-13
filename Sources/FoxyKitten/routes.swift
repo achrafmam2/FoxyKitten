@@ -22,7 +22,7 @@ func setupStyle(forFolder folder: EvidenceFolder) -> [String : String] {
     // Set the style for that evidence.
     let colors = ["#FFC6BC", "#E5E5E5", "#E0F5FF", "#D6FFFA", "#FFF8F0"]
     let color = colors[Int(arc4random_uniform(UInt32(colors.count)))]
-    let cssStyle = "background-color: \(color);"
+    let cssStyle = "background-color: \(color); text-decoration: none;"
 
     // Unique identifier of the evidence chunk.
     let id = evidence.uuid.uuidString
