@@ -200,3 +200,30 @@ public class FoxyClang {
     return muttableUsrToDefinition
   }
 }
+
+extension FoxyClang {
+  /// Calculate number of tokens in source range.
+  /// - parameter range: A source range.
+  func numTokens(inRange range: SourceRange) -> Int {
+    let file = range.start.file
+    guard let unit = units.first(where: { tu in
+      return tu.getFile(for: tu.spelling) == file
+    }) else {
+      assertionFailure("\(file) is not part \(String(describing: self.name))")
+      return 0
+    }
+    return unit.tokens(in: range).count
+  }
+
+  /// Calculate number of tokens in a file.
+  /// - parameter file: A file.
+  func numTokens(inFile file: File) -> Int {
+    guard let unit = units.first(where: { tu in
+      return tu.getFile(for: tu.spelling) == file
+    }) else {
+      assertionFailure("\(file) is not part \(String(describing: self.name))")
+      return 0
+    }
+    return unit.tokens(in: unit.cursor.range).count
+  }
+}

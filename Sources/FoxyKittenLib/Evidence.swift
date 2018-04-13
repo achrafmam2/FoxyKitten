@@ -61,6 +61,21 @@ public struct EvidenceFolder : Hashable {
     return files.map {$0}
   }
 
+  /// Percentage plagiarised.
+  /// The percentage is calculated based on the number of tokens
+  /// plagiarised.
+  public var percentPlagiarised: Double {
+    let totNumTokens = culprit.files.reduce(0) { (sum, file) -> Int in
+      return sum + culprit.numTokens(inFile: file)
+    }
+
+    let plagiarizedTokens = evidences.reduce(0) { (sum, evidence) -> Int in
+      return sum + culprit.numTokens(inRange: evidence.lhs.location)
+    }
+
+    return Double(plagiarizedTokens) / Double(totNumTokens)
+  }
+
   public init(culprit: FoxyClang, evidences: [Evidence]) {
     self.culprit = culprit
     self.evidences = evidences

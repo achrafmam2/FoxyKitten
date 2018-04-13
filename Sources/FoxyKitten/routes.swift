@@ -54,7 +54,7 @@ public func routes(folders: [EvidenceFolder], using router: Router) throws {
         continue
       }
       let link = String(format: "http://localhost:8080/result/%d", folder.uuid.hashValue)
-      out += "- [\(name)](\(link))\n"
+      out += "- [\(name)](\(link))  (\(Int(folder.percentPlagiarised * 100.0)) %)\n"
     }
 
     let root = cmark_parse_document(out, out.utf16.count, 0)
