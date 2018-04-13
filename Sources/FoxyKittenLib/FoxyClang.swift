@@ -16,7 +16,7 @@ public class FoxyClang {
   public let path: String
 
   /// Translation Units of the project.
-  private let units: [TranslationUnit]
+  public let units: [TranslationUnit]
 
   /// Mapping between Usrs and function Definitions.
   private let usrToFunctionDefinition: [String: Cursor]
