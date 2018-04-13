@@ -77,13 +77,32 @@ till here {{ac-12}}
 """
 
     let expected = """
-<a href='foxy/#123' id='123' target='__blank' style='background-color: #d5f4e6;'> one lineer </a>
-<a href='foxy/#ac-12' id='ac-12' target='__blank' style='background-color: #d5f4e6;'> spans over many lines
+<a href='foxy#123' id='123' target='__blank' style='background-color: #d5f4e6;'> one lineer </a>
+<a href='kitten#ac-12' id='ac-12' target='__blank' style='background-color: #a6ffe6;'> spans over many lines
 goes
 till here </a>
 """
 
-    let options = HyperLinkTagOptions(url: "foxy/", target: "__blank")
-    XCTAssertEqual(expected, HtmlBlamer.default.highlight(s, options: options))
+    struct Delegate: HtmlBlamerDelegate {
+      func urlForEvidence(withId id: String) -> String {
+        return ["123": "foxy",
+                "ac-12": "kitten"][id]!
+      }
+
+      func targetForEvidence(withId id: String) -> String {
+        return ["123": "__blank",
+                "ac-12": "__blank"][id]!
+      }
+
+      func styleForEvidence(withId id: String) -> String {
+        return ["123": "background-color: #d5f4e6;",
+                "ac-12": "background-color: #a6ffe6;"][id]!
+      }
+    }
+
+    let blamer = HtmlBlamer.default
+    blamer.delegate = Delegate()
+
+    XCTAssertEqual(expected, HtmlBlamer.default.highlight(s))
   }
 }

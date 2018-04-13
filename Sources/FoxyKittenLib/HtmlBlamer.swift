@@ -1,45 +1,43 @@
 import Foundation
 import ccmark
 
-/// Hyperlink options used when blaming, and highliting.
-public struct HyperLinkTagOptions {
-  /// The url used in the hyperlink tag.
-  public let url: String
+/// Delegate called when the html blamer is highlighting the evidence.
+public protocol HtmlBlamerDelegate {
+  /// Gives a suitable url to use when highlighting a blamed section with an identifier
+  /// `id` (e.g: {{some_id_here}}).
+  func urlForEvidence(withId id: String) -> String
 
-  /// The target used in the hyperlink tag.
-  public let target: String
+  /// Gives a suitable target to used when highlighting a blamed sections with an
+  /// identifier `id` (e.g: {{some_id_here}}).
+  func targetForEvidence(withId id: String) -> String
 
-  /// Css style to be used in the hyperlink tag.
-  public let style: String
-
-  public init(url: String, target: String, style: String = "background-color: #d5f4e6;") {
-    self.url = url
-    self.target = target
-    self.style = style
-  }
+  /// Gives a suitable CSS style to used when highlighting a blamed sections with an
+  /// identifier `id` (e.g: {{some_id_here}}).
+  func styleForEvidence(withId id: String) -> String
 }
 
 /// Used for rendering source code to html with plagiarised sections
 /// highlighted.
 public class HtmlBlamer {
   static public var `default` = HtmlBlamer()
-  public var hyperlinkTagOptions: HyperLinkTagOptions = HyperLinkTagOptions(url: "", target: "")
   public var chunks: [EvidenceChunk] = []
+
+  public var delegate: HtmlBlamerDelegate?
 
   public init() { }
 
   ///  Render source code to html with plagiarised sections highlited.
   /// - parameters:
   ///   - s: Source code.
-  ///   - setup: closure function that initializes the `chunks` and
-  ///       the `hyperlinkTagOptions`.
+  ///   - setup: A closure that sets up the delegate and passes it to the blamer.
   /// - returns: Html code.
   public func render(_ s: String, _ setup: (HtmlBlamer) -> Void) -> String {
+    // FIXME: throw in case no delegate is set.
     setup(self)
 
     var str = blame(s, on: chunks)
     str = renderToHtml(str)
-    str = highlight(str, options: hyperlinkTagOptions)
+    str = highlight(str)
 
     // Add syntax highliting.
     str += "<script src=\"https://cdn.rawgit.com/google/code-prettify/master/loader/run_prettify.js\"></script>\n"
@@ -58,9 +56,7 @@ public class HtmlBlamer {
   ///    - str: A blamed string.
   ///     - options:
   /// - returns: Html
-  internal func highlight(
-    _ str: String,
-    options: HyperLinkTagOptions) -> String {
+  internal func highlight(_ str: String) -> String {
 
     let delim = "\\{\\{(.*?)\\}\\}"
     let pattern = delim  + "(.*?)" + delim
@@ -79,8 +75,16 @@ public class HtmlBlamer {
 
     var s = str
     for match in matches.reversed() {
+      let range = str.range(from: match.range(at: 1))
+      let id = String(str[range!])
+
+      // FIXME: handle case of no delegate.
+      let url = delegate?.urlForEvidence(withId: id)
+      let target = delegate?.targetForEvidence(withId: id)
+      let style = delegate?.styleForEvidence(withId: id)
+
       let template =
-      "<a href='\(options.url)#$1' id='$1' target='\(options.target)' style='\(options.style)'>$2</a>"
+      "<a href='\(url!)#$1' id='$1' target='\(target!)' style='\(style!)'>$2</a>"
       let replacement =
         regex.replacementString(for: match,
                                 in: s,
