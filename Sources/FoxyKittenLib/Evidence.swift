@@ -73,7 +73,7 @@ public struct EvidenceFolder : Hashable {
       return sum + culprit.numTokens(inRange: evidence.lhs.location)
     }
 
-    return Double(plagiarizedTokens) / Double(totNumTokens)
+    return (totNumTokens > 0) ? (Double(plagiarizedTokens) / Double(totNumTokens)) : 0.0
   }
 
   public init(culprit: FoxyClang, evidences: [Evidence]) {
