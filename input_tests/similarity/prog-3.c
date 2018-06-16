@@ -1,4 +1,3 @@
-// ID :71750_72494
 #include<stdio.h>//Standard input output library with standard functions such as scanf and printf
 #include <string.h> //Library that has the functions dedicated to handling strings
 #include <ctype.h> //Library that has functions that check the type of charcaters (digits, uppercase..) or chnages them to another type
