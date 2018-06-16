@@ -1,7 +1,3 @@
-
-// 71052-72114
-//This program (CSC 1401 PROJECT) contains the login, sign in and exit features of an application
-
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
