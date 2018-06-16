@@ -1,9 +1,3 @@
-
-/*
- * This is a project done by Ali Benjelloun Touimi and Amine Rhoul
- * IDs: 70743, 72503
- */ 
-
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
