@@ -1,3 +1,3 @@
 # FoxyKitten
 
-A description of this package.
+Automatic plagiarism detection in the classroom for C-like languages.
